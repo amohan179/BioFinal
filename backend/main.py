@@ -1,10 +1,17 @@
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 
 from .biology import CODON_TABLE, full_process, transcribe, translate, validate_sequence
 from .molecular import analyze_structure_text, fetch_structure_text
 from .models import DNARequest, SequenceRequest, ValidateRequest
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+FRONTEND_DIST = PROJECT_ROOT / "frontend" / "dist"
+FRONTEND_ASSETS = FRONTEND_DIST / "assets"
 
 app = FastAPI(
     title="Central Dogma Lab API",
@@ -72,3 +79,35 @@ def structure_analysis(pdb_id: str):
         raise HTTPException(status_code=404, detail=str(error)) from error
     except RuntimeError as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
+
+
+if FRONTEND_ASSETS.exists():
+    app.mount("/assets", StaticFiles(directory=FRONTEND_ASSETS), name="frontend-assets")
+
+
+@app.get("/", include_in_schema=False)
+def frontend_index():
+    index_file = FRONTEND_DIST / "index.html"
+    if not index_file.exists():
+        raise HTTPException(status_code=503, detail="Frontend build not found. Run `npm --prefix frontend run build`.")
+    return FileResponse(index_file)
+
+
+@app.get("/model.html", include_in_schema=False)
+def frontend_model():
+    model_file = FRONTEND_DIST / "model.html"
+    if not model_file.exists():
+        raise HTTPException(status_code=503, detail="Frontend build not found. Run `npm --prefix frontend run build`.")
+    return FileResponse(model_file)
+
+
+@app.get("/{path:path}", include_in_schema=False)
+def frontend_fallback(path: str):
+    requested_file = FRONTEND_DIST / path
+    if requested_file.is_file():
+        return FileResponse(requested_file)
+
+    index_file = FRONTEND_DIST / "index.html"
+    if not index_file.exists():
+        raise HTTPException(status_code=503, detail="Frontend build not found. Run `npm --prefix frontend run build`.")
+    return FileResponse(index_file)

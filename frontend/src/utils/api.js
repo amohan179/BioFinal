@@ -1,7 +1,7 @@
 import { CODON_TABLE } from '../data/codonTable';
 import { fullProcess, transcribeDNA, translateMRNA, validateDNA } from './sequenceUtils';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8001';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 async function request(path, options) {
   const response = await fetch(`${API_URL}${path}`, {
