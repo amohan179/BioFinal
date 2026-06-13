@@ -3,7 +3,7 @@ services:
     name: bioproject
     env: python
     plan: free
-    buildCommand: pip install -r backend/requirements.txt && cd frontend && npm ci && npm run build
+    buildCommand: pip install -r backend/requirements.txt && cd frontend && npm install && npm run build
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
